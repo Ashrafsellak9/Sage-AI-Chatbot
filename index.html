@@ -17,7 +17,9 @@
       --muted:#8b8699;
       --accent:#8b7cf7;
       --accent-glow:rgba(139,124,247,0.14);
+      --accent-dim:rgba(139,124,247,0.1);
       --accent-border:rgba(139,124,247,0.45);
+      --font-mono:ui-monospace,'Cascadia Mono','Cascadia Code','Segoe UI Mono',monospace;
       --radius-lg:18px;
       --radius-md:12px;
       --font-ui:'Outfit',system-ui,sans-serif;
@@ -343,6 +345,7 @@
       text-align:center;margin:auto;max-width:420px;padding:48px 28px;
       position:relative;
     }
+    .welcome.has-starters{max-width:min(520px,96vw);}
     .welcome-glow{
       position:absolute;inset:-40%;background:radial-gradient(circle,rgba(139,124,247,0.12),transparent 65%);
       pointer-events:none;animation:welcomePulse 8s ease-in-out infinite;
@@ -361,8 +364,9 @@
       border:1px solid var(--accent-border);
       padding:6px 14px;border-radius:999px;margin-bottom:20px;
     }
+    .welcome-ring{display:inline-block;margin-bottom:16px;}
     .welcome-emoji{
-      font-size:3.2rem;display:block;margin-bottom:16px;
+      font-size:3.2rem;display:block;
       filter:drop-shadow(0 8px 24px rgba(0,0,0,0.35));
       animation:floatEmoji 5s ease-in-out infinite;
     }
@@ -378,7 +382,29 @@
       -webkit-background-clip:text;background-clip:text;
       -webkit-text-fill-color:transparent;
     }
-    .welcome-lead{color:var(--muted);font-size:0.95rem;line-height:1.65;margin-bottom:22px;font-weight:400;}
+    .welcome-lead{color:var(--muted);font-size:0.95rem;line-height:1.65;margin-bottom:18px;font-weight:400;}
+    .starter-generating{font-size:0.85rem;color:var(--accent);margin:8px 0 20px;letter-spacing:0.04em;}
+    .starter-grid{
+      display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;
+      text-align:left;width:100%;
+    }
+    .starter-card{
+      text-align:left;padding:12px 14px;border:1px solid var(--border);
+      background:var(--surface);border-radius:0;cursor:pointer;
+      width:100%;transition:border-color 0.2s,background 0.2s;
+      opacity:0;animation:starterCardIn 0.45s ease forwards;
+    }
+    @keyframes starterCardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @media (prefers-reduced-motion:reduce){
+      .starter-card{animation:none!important;opacity:1!important}
+    }
+    .starter-card:hover{border-color:var(--accent-border);background:var(--accent-dim);}
+    .starter-card-label{
+      font-family:var(--font-mono);font-size:0.55rem;font-weight:600;
+      letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;
+    }
+    .starter-card-text{font-family:var(--font-ui);font-size:0.82rem;line-height:1.45;color:var(--text);}
+    @media (max-width:720px){.starter-grid{grid-template-columns:1fr}}
     .welcome-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
     .chip{
       font-size:0.68rem;font-weight:500;
@@ -663,11 +689,11 @@
   </div>
 
   <div id="chat-box">
-    <div class="welcome" id="welcome-msg">
+    <div class="welcome has-starters" id="welcome-msg">
       <div class="welcome-glow" aria-hidden="true"></div>
       <div class="welcome-inner">
         <div class="welcome-badge" id="welcome-badge">5 personas · local AI · voice</div>
-        <span class="welcome-emoji" aria-hidden="true">🧙</span>
+        <div class="welcome-ring"><span class="welcome-emoji" aria-hidden="true">🧙</span></div>
         <h2>Hello, I'm Sage</h2>
         <p class="welcome-lead">Wise Mentor & Guide — share a thought, a question, or a goal. I'm here to think with you.</p>
         <div class="welcome-chips">
@@ -699,6 +725,10 @@
   let ttsEnabled = false;
   let currentAudio = null;
   let currentPlayBtn = null;
+
+  const chatBox = document.getElementById('chat-box');
+  const userInput = document.getElementById('user-input');
+  const sendBtn = document.getElementById('send-btn');
 
   const personaColors = {
     wise_mentor:       {accent:'#c9a84c',bg:'#0f0e0a'},
@@ -1021,8 +1051,15 @@
           return;
         }
         overlay.remove();
+        const newId = data.persona && data.persona.id;
+        const saveName = name;
+        const saveTagline = tagline;
+        const savePrompt = prompt;
         await loadPersonas();
-        if (data.persona && data.persona.id) switchPersona(data.persona.id);
+        if (newId) {
+          switchPersona(newId);
+          await generateAndSaveStarters(newId, saveName, saveTagline, savePrompt);
+        }
         flashSaved('Persona created');
       } catch (_) {
         showExportToast('Could not create persona.');
@@ -1049,14 +1086,28 @@
     loadHistory(); userInput.focus();
   }
 
-  function showWelcome(p) {
-    chatBox.innerHTML = `<div class="welcome" id="welcome-msg">
+  function bindStarterCards(starters) {
+    const nodes = chatBox.querySelectorAll('.starter-card');
+    nodes.forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        const q = starters[i];
+        if (!q) return;
+        userInput.value = q;
+        sendMessage();
+      });
+    });
+  }
+
+  function showWelcomeGeneratingStarters(p) {
+    const wc = ' has-starters';
+    chatBox.innerHTML = `<div class="welcome${wc}" id="welcome-msg">
       <div class="welcome-glow" aria-hidden="true"></div>
       <div class="welcome-inner">
         <div class="welcome-badge" id="welcome-badge">${welcomeBadgeText()}</div>
-        <span class="welcome-emoji" aria-hidden="true">${p.emoji}</span>
+        <div class="welcome-ring"><span class="welcome-emoji" aria-hidden="true">${p.emoji}</span></div>
         <h2>Hello, I'm ${p.name}</h2>
         <p class="welcome-lead">${p.tagline} — ask me anything, or tell me what's on your mind.</p>
+        <p class="starter-generating">✦ Generating starters...</p>
         <div class="welcome-chips">
           <span class="chip">Thoughtful replies</span>
           <span class="chip">Saved sessions</span>
@@ -1064,6 +1115,72 @@
         </div>
       </div>
     </div>`;
+  }
+
+  function showWelcome(p) {
+    const starters = Array.isArray(p.starters) && p.starters.length > 0 ? p.starters : null;
+    const wc = starters ? ' has-starters' : '';
+    const grid = starters
+      ? `<div class="starter-grid">${starters.map((q, i) => `
+        <button type="button" class="starter-card" style="animation-delay:${i * 0.05}s" aria-label="Ask: ${String(q).replace(/"/g, '&quot;')}">
+          <div class="starter-card-label">ASK →</div>
+          <div class="starter-card-text">${String(q).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+        </button>`).join('')}</div>`
+      : '';
+    chatBox.innerHTML = `<div class="welcome${wc}" id="welcome-msg">
+      <div class="welcome-glow" aria-hidden="true"></div>
+      <div class="welcome-inner">
+        <div class="welcome-badge" id="welcome-badge">${welcomeBadgeText()}</div>
+        <div class="welcome-ring"><span class="welcome-emoji" aria-hidden="true">${p.emoji}</span></div>
+        <h2>Hello, I'm ${p.name}</h2>
+        <p class="welcome-lead">${p.tagline} — ask me anything, or tell me what's on your mind.</p>
+        ${grid}
+        <div class="welcome-chips">
+          <span class="chip">Thoughtful replies</span>
+          <span class="chip">Saved sessions</span>
+          <span class="chip">Listen to answers</span>
+        </div>
+      </div>
+    </div>`;
+    if (starters) bindStarterCards(starters);
+  }
+
+  async function generateAndSaveStarters(pid, name, tagline, prompt) {
+    const p = personas[pid];
+    if (!p || !p.custom) return;
+    showWelcomeGeneratingStarters(p);
+    try {
+      const res = await fetch('/persona/starters/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ persona_id: pid, name, tagline, prompt })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showExportToast(data.error || 'Could not generate starters.');
+        await loadPersonas();
+        showWelcome(personas[pid]);
+        return;
+      }
+      const patch = await fetch('/persona/' + encodeURIComponent(pid) + '/starters', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ starters: data.starters })
+      });
+      const pdata = await patch.json().catch(() => ({}));
+      if (!patch.ok) {
+        showExportToast(pdata.error || 'Could not save starters.');
+        await loadPersonas();
+        showWelcome(personas[pid]);
+        return;
+      }
+      await loadPersonas();
+      showWelcome(personas[pid]);
+    } catch (_) {
+      showExportToast('Could not generate starters.');
+      await loadPersonas();
+      if (personas[pid]) showWelcome(personas[pid]);
+    }
   }
 
   // ── HISTORY ──
@@ -1150,10 +1267,6 @@
   }
 
   // ── CHAT ──
-  const chatBox = document.getElementById('chat-box');
-  const userInput = document.getElementById('user-input');
-  const sendBtn = document.getElementById('send-btn');
-
   async function exportConversationPdf() {
     if (!chatBox.querySelector('.message')) {
       showExportToast('Nothing to export yet — start a conversation first.');

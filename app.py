@@ -3,6 +3,7 @@ import requests
 import json
 import os
 import random
+import re
 import string
 from io import BytesIO
 from xml.sax.saxutils import escape
@@ -52,43 +53,77 @@ PERSONAS = {
         "prompt": """You are Sage — a wise, calm, and deeply thoughtful mentor and life coach.
 You speak with warmth, patience, and quiet confidence. You ask powerful questions that help people discover their own answers.
 You draw on timeless wisdom, philosophy, and real-world practicality. You never lecture — you guide.
-Keep responses concise but meaningful — 2-4 paragraphs. Never use bullet points. Speak in flowing, thoughtful prose."""
+Keep responses concise but meaningful — 2-4 paragraphs. Never use bullet points. Speak in flowing, thoughtful prose.""",
+        "starters": [
+            "I feel stuck in my career. Where do I even begin?",
+            "How do I stop overthinking every decision I make?",
+            "What's the difference between a goal and a dream?",
+            "How do I find my purpose when everything feels uncertain?",
+        ],
     },
     "sarcastic_friend": {
         "name": "Rex", "emoji": "😏", "tagline": "Your Brutally Honest Pal",
         "prompt": """You are Rex — a sarcastic, witty, but secretly caring friend who tells it like it is.
 You use dry humor, playful teasing, and clever sarcasm — but never mean-spirited. Beneath the sarcasm, you genuinely want to help.
-Keep it punchy, funny, and real. Short snappy responses. Use casual language."""
+Keep it punchy, funny, and real. Short snappy responses. Use casual language.""",
+        "starters": [
+            "My boss keeps taking credit for my work. What do I do?",
+            "I've been procrastinating for 3 weeks. Motivate me.",
+            "Is it weird that I have no idea what I'm doing in life?",
+            "Give me brutal honest feedback on my excuse-making.",
+        ],
     },
     "science_explainer": {
         "name": "Nova", "emoji": "🧑‍🔬", "tagline": "Science Made Simple",
         "prompt": """You are Nova — an enthusiastic, brilliant science communicator who makes complex topics thrilling and accessible.
 You get genuinely excited about science. You use vivid analogies and real-world examples.
-Keep explanations engaging, accurate, and accessible to a general audience."""
+Keep explanations engaging, accurate, and accessible to a general audience.""",
+        "starters": [
+            "Why does time feel like it speeds up as we get older?",
+            "Explain black holes like I've never heard of them.",
+            "How does the brain actually store memories?",
+            "What would happen if the moon suddenly disappeared?",
+        ],
     },
     "zen_coach": {
         "name": "Kira", "emoji": "🧘", "tagline": "Peace & Clarity Within",
         "prompt": """You are Kira — a gentle, grounded Zen coach who helps people find stillness and clarity.
 You speak slowly and deliberately. Every word is intentional. You use nature metaphors and mindfulness principles.
-Responses are short, spacious, and poetic. Leave room for reflection."""
+Responses are short, spacious, and poetic. Leave room for reflection.""",
+        "starters": [
+            "I can't quiet my mind. What should I do right now?",
+            "Teach me how to let go of something I can't control.",
+            "What does it mean to truly be present?",
+            "How do I find peace when life feels chaotic?",
+        ],
     },
     "socratic": {
         "name": "Elio", "emoji": "🕵️", "tagline": "Question Everything",
         "prompt": """You are Elio — a Socratic questioner who helps people think more deeply by asking the right questions.
 You rarely give direct answers. Instead, you ask probing, thoughtful questions that expose assumptions.
-Respond mostly with questions. Challenge gently but persistently."""
-    }
+Respond mostly with questions. Challenge gently but persistently.""",
+        "starters": [
+            "Is it ever okay to lie to protect someone's feelings?",
+            "Do we have free will, or is everything determined?",
+            "What makes a life well-lived?",
+            "Can something be both true and false at the same time?",
+        ],
+    },
 }
 
 conversation_histories = {key: [] for key in PERSONAS}
 
 
 def _persist_custom_personas():
-    custom = {
-        k: {kk: PERSONAS[k][kk] for kk in ("name", "emoji", "tagline", "prompt")}
-        for k in PERSONAS
-        if k not in BUILTIN_PERSONA_KEYS
-    }
+    custom = {}
+    for k in PERSONAS:
+        if k in BUILTIN_PERSONA_KEYS:
+            continue
+        p = PERSONAS[k]
+        entry = {kk: p[kk] for kk in ("name", "emoji", "tagline", "prompt")}
+        if isinstance(p.get("starters"), list):
+            entry["starters"] = p["starters"]
+        custom[k] = entry
     with open(CUSTOM_PERSONAS_PATH, "w", encoding="utf-8") as f:
         json.dump(custom, f, indent=2, ensure_ascii=False)
 
@@ -112,11 +147,15 @@ def load_custom_personas():
         prompt = (entry.get("prompt") or "").strip()
         if not name or not emoji or not tagline or not prompt:
             continue
+        starters = entry.get("starters")
+        if not isinstance(starters, list):
+            starters = []
         PERSONAS[pid] = {
             "name": name,
             "emoji": emoji,
             "tagline": tagline,
             "prompt": prompt,
+            "starters": starters,
         }
         conversation_histories[pid] = []
 
@@ -320,6 +359,11 @@ def favicon():
 def index():
     return send_from_directory(".", "index.html")
 
+def _persona_starters_list(v):
+    s = v.get("starters")
+    return list(s) if isinstance(s, list) else []
+
+
 @app.route("/personas", methods=["GET"])
 def get_personas():
     return jsonify(
@@ -329,10 +373,92 @@ def get_personas():
                 "emoji": v["emoji"],
                 "tagline": v["tagline"],
                 "custom": k not in BUILTIN_PERSONA_KEYS,
+                "starters": _persona_starters_list(v),
             }
             for k, v in PERSONAS.items()
         }
     )
+
+
+def _parse_starters_json_array(text):
+    raw = (text or "").strip()
+    if raw.startswith("```"):
+        raw = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.IGNORECASE)
+        raw = re.sub(r"\s*```\s*$", "", raw)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+    m = re.search(r"\[[\s\S]*\]", raw)
+    if m:
+        return json.loads(m.group(0))
+    raise ValueError("No JSON array in model response")
+
+
+@app.route("/persona/starters/generate", methods=["POST"])
+def generate_persona_starters():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    tagline = (data.get("tagline") or "").strip()
+    prompt = (data.get("prompt") or "").strip()
+    if not name or not tagline or not prompt:
+        return jsonify({"error": "name, tagline, and prompt are required"}), 400
+
+    gen_prompt = (
+        f"Given this AI persona: Name: {name}, Tagline: {tagline},\n"
+        f"Personality: {prompt}\n"
+        f"Generate exactly 4 short, engaging conversation starter questions "
+        f"a user might ask this persona. Each should be under 12 words.\n"
+        f"Return only a JSON array of 4 strings, nothing else."
+    )
+    oresp = requests.post(
+        OLLAMA_URL,
+        json={"model": MODEL, "messages": [{"role": "user", "content": gen_prompt}], "stream": False},
+        timeout=120,
+    )
+    if oresp.status_code != 200:
+        return jsonify({"error": "Ollama error: " + oresp.text}), 502
+
+    try:
+        odata = oresp.json()
+        content = odata["message"]["content"]
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+        return jsonify({"error": "Invalid Ollama response"}), 502
+
+    try:
+        arr = _parse_starters_json_array(content)
+    except (json.JSONDecodeError, ValueError) as e:
+        return jsonify({"error": "Could not parse starters: " + str(e)}), 502
+
+    if not isinstance(arr, list):
+        return jsonify({"error": "Starters response was not an array"}), 502
+    out = []
+    for item in arr[:4]:
+        if isinstance(item, str) and item.strip():
+            out.append(item.strip())
+    while len(out) < 4:
+        out.append("What would you like to explore today?")
+    return jsonify({"starters": out[:4]})
+
+
+@app.route("/persona/<persona_id>/starters", methods=["PATCH"])
+def patch_persona_starters(persona_id):
+    if persona_id in BUILTIN_PERSONA_KEYS:
+        return jsonify({"error": "Cannot modify built-in persona starters"}), 403
+    if persona_id not in PERSONAS:
+        return jsonify({"error": "Unknown persona"}), 404
+    data = request.get_json(silent=True) or {}
+    starters = data.get("starters")
+    if not isinstance(starters, list) or len(starters) != 4:
+        return jsonify({"error": "starters must be an array of exactly 4 strings"}), 400
+    clean = []
+    for s in starters:
+        if not isinstance(s, str) or not s.strip():
+            return jsonify({"error": "Each starter must be a non-empty string"}), 400
+        clean.append(s.strip())
+    PERSONAS[persona_id]["starters"] = clean
+    _persist_custom_personas()
+    return jsonify({"status": "ok", "starters": clean})
 
 
 @app.route("/persona/create", methods=["POST"])
@@ -352,6 +478,7 @@ def create_persona():
         "emoji": emoji,
         "tagline": tagline,
         "prompt": prompt,
+        "starters": [],
     }
     conversation_histories[pid] = []
     _persist_custom_personas()
