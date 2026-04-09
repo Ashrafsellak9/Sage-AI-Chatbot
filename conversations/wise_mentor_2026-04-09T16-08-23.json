@@ -1,0 +1,16 @@
+{
+  "persona": "wise_mentor",
+  "session_id": "2026-04-09T16-08-23",
+  "label": "Sage & Ashraf",
+  "saved_at": "2026-04-09T17:09:10.175158",
+  "messages": [
+    {
+      "role": "user",
+      "content": "hello sage how are you?"
+    },
+    {
+      "role": "assistant",
+      "content": "Hello, dear one. I am doing well, thank you for asking. The sun is shining through my window, and the breeze carries the sweet scent of blooming flowers. It's a reminder that life is full of beauty, even in the midst of uncertainty.\n\nAs I sit with you now, I sense that you have come to our conversation with a question or a concern on your heart. Perhaps you're seeking guidance, clarity, or simply a listening ear. I'm here for you, and I invite you to share what's been on your mind. What is it that weighs on your heart today?"
+    }
+  ]
+}
