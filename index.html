@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sage — Your Wise Mentor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --ink: #1a1612;
+      --parchment: #f5f0e8;
+      --gold: #c9a84c;
+      --gold-light: #e8d5a3;
+      --stone: #8c7b6b;
+      --mist: #ede8de;
+      --deep: #2c2318;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: var(--parchment);
+      color: var(--ink);
+      font-family: 'Jost', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-image:
+        radial-gradient(ellipse at 20% 10%, rgba(201,168,76,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 90%, rgba(140,123,107,0.1) 0%, transparent 50%);
+    }
+
+    /* Header */
+    header {
+      width: 100%;
+      max-width: 760px;
+      padding: 48px 32px 24px;
+      text-align: center;
+      position: relative;
+    }
+
+    .flame {
+      font-size: 2rem;
+      display: block;
+      margin-bottom: 12px;
+      animation: flicker 3s ease-in-out infinite;
+    }
+
+    @keyframes flicker {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(0.97); }
+    }
+
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3rem;
+      font-weight: 300;
+      letter-spacing: 0.12em;
+      color: var(--deep);
+    }
+
+    .subtitle {
+      font-size: 0.78rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--stone);
+      margin-top: 6px;
+    }
+
+    .divider {
+      width: 120px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 20px auto 0;
+    }
+
+    /* Chat container */
+    .chat-wrapper {
+      width: 100%;
+      max-width: 760px;
+      padding: 0 24px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #chat-box {
+      flex: 1;
+      min-height: 400px;
+      max-height: 55vh;
+      overflow-y: auto;
+      padding: 24px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--gold-light) transparent;
+    }
+
+    #chat-box::-webkit-scrollbar { width: 4px; }
+    #chat-box::-webkit-scrollbar-thumb { background: var(--gold-light); border-radius: 2px; }
+
+    /* Messages */
+    .message {
+      display: flex;
+      gap: 16px;
+      animation: fadeUp 0.4s ease forwards;
+      opacity: 0;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user { flex-direction: row-reverse; }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    .message.sage .avatar {
+      background: linear-gradient(135deg, var(--deep), var(--stone));
+      color: var(--gold-light);
+      border: 1px solid var(--gold);
+    }
+
+    .message.user .avatar {
+      background: var(--mist);
+      color: var(--stone);
+      border: 1px solid rgba(201,168,76,0.3);
+    }
+
+    .bubble {
+      max-width: 82%;
+      padding: 16px 20px;
+      border-radius: 2px;
+      line-height: 1.75;
+      font-size: 0.95rem;
+    }
+
+    .message.sage .bubble {
+      background: white;
+      border-left: 2px solid var(--gold);
+      box-shadow: 0 2px 20px rgba(0,0,0,0.06);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.05rem;
+      font-weight: 400;
+      color: var(--deep);
+    }
+
+    .message.user .bubble {
+      background: var(--deep);
+      color: var(--parchment);
+      border-right: 2px solid var(--gold);
+      text-align: right;
+    }
+
+    /* Welcome message */
+    .welcome {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--stone);
+    }
+
+    .welcome p {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 1.15rem;
+      line-height: 1.8;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* Typing indicator */
+    .typing-bubble {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 16px 20px;
+      background: white;
+      border-left: 2px solid var(--gold);
+      width: fit-content;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.06);
+    }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--gold);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulse {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Input area */
+    .input-area {
+      padding: 20px 0 36px;
+      border-top: 1px solid rgba(201,168,76,0.2);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    textarea {
+      flex: 1;
+      background: white;
+      border: 1px solid rgba(201,168,76,0.35);
+      border-radius: 2px;
+      padding: 14px 18px;
+      font-family: 'Jost', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 300;
+      color: var(--ink);
+      resize: none;
+      min-height: 52px;
+      max-height: 140px;
+      outline: none;
+      transition: border-color 0.2s;
+      line-height: 1.5;
+    }
+
+    textarea:focus { border-color: var(--gold); }
+    textarea::placeholder { color: var(--stone); opacity: 0.6; }
+
+    button#send-btn {
+      background: var(--deep);
+      color: var(--gold-light);
+      border: 1px solid var(--gold);
+      border-radius: 2px;
+      width: 52px;
+      height: 52px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, transform 0.1s;
+      flex-shrink: 0;
+    }
+
+    button#send-btn:hover { background: #3d3025; }
+    button#send-btn:active { transform: scale(0.95); }
+    button#send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .input-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .hint {
+      font-size: 0.72rem;
+      color: var(--stone);
+      opacity: 0.6;
+      letter-spacing: 0.05em;
+    }
+
+    button#reset-btn {
+      background: none;
+      border: none;
+      font-size: 0.72rem;
+      color: var(--stone);
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    }
+
+    button#reset-btn:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="flame">🕯️</span>
+  <h1>S A G E</h1>
+  <p class="subtitle">Your Wise Mentor & Guide</p>
+  <div class="divider"></div>
+</header>
+
+<div class="chat-wrapper">
+  <div id="chat-box">
+    <div class="welcome" id="welcome-msg">
+      <p>"The journey of a thousand miles begins with a single question.<br>What is on your mind today?"</p>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="input-row">
+      <textarea id="user-input" placeholder="Share what's on your mind..." rows="1"></textarea>
+      <button id="send-btn" title="Send">➤</button>
+    </div>
+    <div class="input-footer">
+      <span class="hint">Press Enter to send · Shift+Enter for new line</span>
+      <button id="reset-btn">✦ New conversation</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const chatBox = document.getElementById('chat-box');
+  const userInput = document.getElementById('user-input');
+  const sendBtn = document.getElementById('send-btn');
+  const resetBtn = document.getElementById('reset-btn');
+  const welcomeMsg = document.getElementById('welcome-msg');
+
+  function autoResize() {
+    userInput.style.height = 'auto';
+    userInput.style.height = Math.min(userInput.scrollHeight, 140) + 'px';
+  }
+
+  userInput.addEventListener('input', autoResize);
+
+  userInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  sendBtn.addEventListener('click', sendMessage);
+  resetBtn.addEventListener('click', resetChat);
+
+  function appendMessage(role, text) {
+    if (welcomeMsg) welcomeMsg.remove();
+
+    const msg = document.createElement('div');
+    msg.className = `message ${role}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = role === 'sage' ? '🧙' : '✦';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+
+    msg.appendChild(avatar);
+    msg.appendChild(bubble);
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function showTyping() {
+    const msg = document.createElement('div');
+    msg.className = 'message sage';
+    msg.id = 'typing';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = '🧙';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'typing-bubble';
+    bubble.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+
+    msg.appendChild(avatar);
+    msg.appendChild(bubble);
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('typing');
+    if (t) t.remove();
+  }
+
+  async function sendMessage() {
+    const text = userInput.value.trim();
+    if (!text) return;
+
+    appendMessage('user', text);
+    userInput.value = '';
+    userInput.style.height = 'auto';
+    sendBtn.disabled = true;
+    showTyping();
+
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+      const data = await res.json();
+      removeTyping();
+      appendMessage('sage', data.response || 'Something went wrong.');
+    } catch (err) {
+      removeTyping();
+      appendMessage('sage', 'The connection was lost. Please try again.');
+    }
+
+    sendBtn.disabled = false;
+    userInput.focus();
+  }
+
+  async function resetChat() {
+    await fetch('/reset', { method: 'POST' });
+    chatBox.innerHTML = `
+      <div class="welcome" id="welcome-msg">
+        <p>"The journey of a thousand miles begins with a single question.<br>What is on your mind today?"</p>
+      </div>`;
+  }
+</script>
+</body>
+</html>
