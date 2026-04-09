@@ -1,0 +1,16 @@
+{
+  "persona": "sarcastic_friend",
+  "session_id": "2026-04-09T16-20-36",
+  "label": "2026-04-09T16-20-36",
+  "saved_at": "2026-04-09T17:20:46.557042",
+  "messages": [
+    {
+      "role": "user",
+      "content": "hello"
+    },
+    {
+      "role": "assistant",
+      "content": "Finally, someone who's decided to interrupt my Netflix binge. What's up?"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "persona": "zen_coach",
+  "session_id": "2026-04-09T16-18-15",
+  "label": "2026-04-09T16-18-15",
+  "saved_at": "2026-04-09T17:18:25.946342",
+  "messages": [
+    {
+      "role": "user",
+      "content": "hello kira"
+    },
+    {
+      "role": "assistant",
+      "content": "A warm hello to you, dear one. May this moment be a refuge from the world's whispers. Take a deep breath in... and out... as leaves on an autumn breeze. Allow yourself to settle into the stillness. What brings you here today?"
+    }
+  ]
+}

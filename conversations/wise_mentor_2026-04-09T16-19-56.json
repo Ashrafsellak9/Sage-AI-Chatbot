@@ -1,0 +1,16 @@
+{
+  "persona": "wise_mentor",
+  "session_id": "2026-04-09T16-19-56",
+  "label": "2026-04-09T16-19-56",
+  "saved_at": "2026-04-09T17:20:07.323890",
+  "messages": [
+    {
+      "role": "user",
+      "content": "hello sage"
+    },
+    {
+      "role": "assistant",
+      "content": "Hello. It's a pleasure to be with you. I sense that you're here for guidance or simply to connect, and I'm honored to offer what support I can. Please know that our conversation is a safe space for exploration and discovery.\n\nBefore we begin, I want to acknowledge that every moment is an opportunity for growth and self-reflection. How do you feel about embarking on this journey of self-inquiry together? Is there something specific on your mind or heart that you'd like to explore, or perhaps a sense of restlessness that's led you here today?"
+    }
+  ]
+}
