@@ -14,6 +14,7 @@
       --muted: #6b6b80;
       --accent: #7c6af7;
       --accent-glow: rgba(124,106,247,0.15);
+      --accent-border: rgba(124,106,247,0.4);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -26,25 +27,27 @@
       height: 100vh;
       display: flex;
       overflow: hidden;
+      transition: background 0.4s;
     }
 
     /* SIDEBAR */
     aside {
-      width: 220px;
-      min-width: 220px;
+      width: 230px;
+      min-width: 230px;
       background: var(--surface);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      padding: 24px 12px;
-      gap: 6px;
+      padding: 24px 12px 16px;
+      gap: 4px;
+      overflow-y: auto;
     }
 
     .sidebar-title {
       font-family: 'Syne', sans-serif;
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       font-weight: 600;
-      letter-spacing: 0.2em;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
       color: var(--muted);
       padding: 0 8px 12px;
@@ -65,98 +68,131 @@
       width: 100%;
     }
 
-    .persona-btn:hover {
-      background: var(--accent-glow);
-      color: var(--text);
-    }
-
+    .persona-btn:hover { background: var(--accent-glow); color: var(--text); }
     .persona-btn.active {
       background: var(--accent-glow);
-      border-color: rgba(124,106,247,0.4);
+      border-color: var(--accent-border);
       color: var(--text);
     }
 
-    .persona-btn .p-emoji { font-size: 1.2rem; }
+    .p-emoji { font-size: 1.2rem; }
+    .p-info { display: flex; flex-direction: column; gap: 1px; }
+    .p-name { font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 600; }
+    .p-tag { font-size: 0.63rem; color: var(--muted); line-height: 1.3; }
+    .persona-btn.active .p-tag { color: var(--accent); opacity: 0.85; }
 
-    .persona-btn .p-info { display: flex; flex-direction: column; gap: 1px; }
-    .persona-btn .p-name {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.82rem;
-      font-weight: 600;
+    /* THEME SECTION */
+    .theme-section {
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
     }
-    .persona-btn .p-tag {
-      font-size: 0.65rem;
+
+    .theme-section .sidebar-title { padding-bottom: 10px; }
+
+    .color-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      padding: 0 8px 12px;
+    }
+
+    .color-dot {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.15s, border-color 0.15s;
+      flex-shrink: 0;
+    }
+
+    .color-dot:hover { transform: scale(1.2); }
+    .color-dot.selected { border-color: white; transform: scale(1.15); }
+
+    .custom-color-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 8px 8px;
+    }
+
+    .custom-color-row label {
+      font-size: 0.7rem;
       color: var(--muted);
-      line-height: 1.3;
+      letter-spacing: 0.05em;
     }
-    .persona-btn.active .p-tag { color: rgba(124,106,247,0.8); }
+
+    input[type="color"] {
+      width: 28px; height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: none;
+      cursor: pointer;
+      padding: 2px;
+    }
+
+    .reset-color-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.65rem;
+      padding: 4px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.2s;
+      margin-left: auto;
+    }
+    .reset-color-btn:hover { color: var(--text); border-color: var(--accent); }
 
     /* MAIN */
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+    main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-    /* HEADER */
     .chat-header {
-      padding: 18px 24px;
+      padding: 16px 24px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      background: var(--surface);
     }
 
-    .active-persona {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    .active-persona { display: flex; align-items: center; gap: 12px; }
 
     .active-emoji {
       width: 42px; height: 42px;
       border-radius: 12px;
       background: var(--accent-glow);
-      border: 1px solid rgba(124,106,247,0.3);
+      border: 1px solid var(--accent-border);
       display: flex; align-items: center; justify-content: center;
       font-size: 1.4rem;
+      transition: background 0.3s, border-color 0.3s;
     }
 
-    .active-name {
-      font-family: 'Syne', sans-serif;
-      font-size: 1.1rem;
-      font-weight: 700;
-    }
+    .active-name { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700; }
+    .active-tag { font-size: 0.73rem; color: var(--muted); margin-top: 2px; }
 
-    .active-tag {
-      font-size: 0.75rem;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-
-    .reset-btn {
+    .clear-btn {
       background: none;
       border: 1px solid var(--border);
       color: var(--muted);
       padding: 6px 14px;
       border-radius: 6px;
-      font-size: 0.75rem;
+      font-size: 0.73rem;
       cursor: pointer;
       font-family: 'Inter', sans-serif;
       transition: all 0.2s;
-      letter-spacing: 0.05em;
     }
-    .reset-btn:hover { border-color: var(--accent); color: var(--text); }
+    .clear-btn:hover { border-color: var(--accent); color: var(--text); }
 
-    /* CHAT BOX */
+    /* CHAT */
     #chat-box {
       flex: 1;
       overflow-y: auto;
       padding: 24px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 18px;
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
     }
@@ -166,22 +202,16 @@
       margin: auto;
       padding: 40px 20px;
     }
+    .welcome-emoji { font-size: 3rem; display: block; margin-bottom: 14px; }
+    .welcome h2 { font-family: 'Syne', sans-serif; font-size: 1.4rem; margin-bottom: 8px; }
+    .welcome p { color: var(--muted); font-size: 0.88rem; line-height: 1.6; }
 
-    .welcome-emoji { font-size: 3rem; display: block; margin-bottom: 16px; }
-    .welcome h2 {
-      font-family: 'Syne', sans-serif;
-      font-size: 1.4rem;
-      margin-bottom: 8px;
-    }
-    .welcome p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
-
-    /* MESSAGES */
     .message {
       display: flex;
       gap: 12px;
       animation: fadeUp 0.3s ease forwards;
       opacity: 0;
-      max-width: 800px;
+      max-width: 820px;
     }
 
     @keyframes fadeUp {
@@ -198,11 +228,12 @@
       font-size: 1rem;
       flex-shrink: 0;
       margin-top: 2px;
+      transition: background 0.3s;
     }
 
     .message.bot .msg-avatar {
       background: var(--accent-glow);
-      border: 1px solid rgba(124,106,247,0.3);
+      border: 1px solid var(--accent-border);
     }
 
     .message.user .msg-avatar {
@@ -214,7 +245,7 @@
       padding: 12px 16px;
       border-radius: 12px;
       font-size: 0.9rem;
-      line-height: 1.7;
+      line-height: 1.75;
       max-width: 680px;
     }
 
@@ -228,32 +259,27 @@
       background: var(--accent);
       color: white;
       border-top-right-radius: 4px;
+      transition: background 0.3s;
     }
 
-    /* TYPING */
-    .typing-dots {
-      display: flex; gap: 5px; align-items: center;
-      padding: 4px 2px;
-    }
+    .typing-dots { display: flex; gap: 5px; align-items: center; padding: 4px 2px; }
     .typing-dots span {
       width: 7px; height: 7px;
       border-radius: 50%;
       background: var(--accent);
       animation: bounce 1.3s ease-in-out infinite;
+      transition: background 0.3s;
     }
     .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
     .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
 
     @keyframes bounce {
-      0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+      0%,80%,100% { transform: scale(0.6); opacity: 0.3; }
       40% { transform: scale(1); opacity: 1; }
     }
 
     /* INPUT */
-    .input-area {
-      padding: 16px 24px 20px;
-      border-top: 1px solid var(--border);
-    }
+    .input-area { padding: 14px 24px 18px; border-top: 1px solid var(--border); }
 
     .input-row {
       display: flex;
@@ -265,8 +291,7 @@
       padding: 10px 14px;
       transition: border-color 0.2s;
     }
-
-    .input-row:focus-within { border-color: rgba(124,106,247,0.5); }
+    .input-row:focus-within { border-color: var(--accent-border); }
 
     textarea {
       flex: 1;
@@ -282,7 +307,6 @@
       max-height: 120px;
       line-height: 1.5;
     }
-
     textarea::placeholder { color: var(--muted); }
 
     .send-btn {
@@ -294,31 +318,33 @@
       cursor: pointer;
       font-size: 0.9rem;
       flex-shrink: 0;
-      transition: opacity 0.2s, transform 0.1s;
       color: white;
+      transition: opacity 0.2s, transform 0.1s, background 0.3s;
     }
-
     .send-btn:hover { opacity: 0.85; }
     .send-btn:active { transform: scale(0.93); }
     .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-    .input-hint {
-      font-size: 0.68rem;
-      color: var(--muted);
-      margin-top: 8px;
-      padding: 0 2px;
-    }
+    .input-hint { font-size: 0.67rem; color: var(--muted); margin-top: 7px; padding: 0 2px; }
   </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <aside>
   <div class="sidebar-title">Personas</div>
   <div id="persona-list"></div>
+
+  <div class="theme-section">
+    <div class="sidebar-title">Theme Color</div>
+    <div class="color-presets" id="color-presets"></div>
+    <div class="custom-color-row">
+      <label>Custom</label>
+      <input type="color" id="custom-color" value="#7c6af7" title="Pick any color"/>
+      <button class="reset-color-btn" id="reset-color-btn">↺ Reset</button>
+    </div>
+  </div>
 </aside>
 
-<!-- MAIN CHAT -->
 <main>
   <div class="chat-header">
     <div class="active-persona">
@@ -328,7 +354,7 @@
         <div class="active-tag" id="header-tag">Wise Mentor & Guide</div>
       </div>
     </div>
-    <button class="reset-btn" id="reset-btn">✦ Clear chat</button>
+    <button class="clear-btn" id="clear-btn">✦ Clear chat</button>
   </div>
 
   <div id="chat-box">
@@ -351,17 +377,81 @@
 <script>
   let currentPersona = 'wise_mentor';
   let personas = {};
+  let userOverrideColor = null;
 
-  const chatBox = document.getElementById('chat-box');
-  const userInput = document.getElementById('user-input');
-  const sendBtn = document.getElementById('send-btn');
-  const resetBtn = document.getElementById('reset-btn');
+  // Default accent color per persona
+  const personaColors = {
+    wise_mentor:      { accent: '#c9a84c', bg: '#0f0e0a' },
+    sarcastic_friend: { accent: '#e05c5c', bg: '#0f0a0a' },
+    science_explainer:{ accent: '#4ca8e0', bg: '#090d12' },
+    zen_coach:        { accent: '#6abf8a', bg: '#090f0c' },
+    socratic:         { accent: '#a87cd4', bg: '#0c0a10' },
+  };
 
-  // Load personas from backend
+  // Preset palette swatches
+  const presets = [
+    '#7c6af7','#c9a84c','#e05c5c','#4ca8e0',
+    '#6abf8a','#a87cd4','#e07a3a','#3abfbf',
+    '#e0b84c','#c45c9e'
+  ];
+
+  function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return `${r},${g},${b}`;
+  }
+
+  function applyAccent(hex, bgOverride) {
+    const rgb = hexToRgb(hex);
+    document.documentElement.style.setProperty('--accent', hex);
+    document.documentElement.style.setProperty('--accent-glow', `rgba(${rgb},0.15)`);
+    document.documentElement.style.setProperty('--accent-border', `rgba(${rgb},0.4)`);
+    if (bgOverride) document.documentElement.style.setProperty('--bg', bgOverride);
+    // sync color picker
+    document.getElementById('custom-color').value = hex;
+    // update selected dot
+    document.querySelectorAll('.color-dot').forEach(d => {
+      d.classList.toggle('selected', d.dataset.color === hex);
+    });
+  }
+
+  function buildPresets() {
+    const container = document.getElementById('color-presets');
+    presets.forEach(color => {
+      const dot = document.createElement('div');
+      dot.className = 'color-dot';
+      dot.dataset.color = color;
+      dot.style.background = color;
+      dot.title = color;
+      dot.addEventListener('click', () => {
+        userOverrideColor = color;
+        applyAccent(color, null);
+      });
+      container.appendChild(dot);
+    });
+  }
+
+  document.getElementById('custom-color').addEventListener('input', (e) => {
+    userOverrideColor = e.target.value;
+    applyAccent(e.target.value, null);
+    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+  });
+
+  document.getElementById('reset-color-btn').addEventListener('click', () => {
+    userOverrideColor = null;
+    const c = personaColors[currentPersona] || { accent: '#7c6af7', bg: '#0e0e12' };
+    applyAccent(c.accent, c.bg);
+  });
+
   async function loadPersonas() {
     const res = await fetch('/personas');
     personas = await res.json();
     renderSidebar();
+    buildPresets();
+    // apply default theme for initial persona
+    const c = personaColors[currentPersona];
+    if (c) applyAccent(c.accent, c.bg);
   }
 
   function renderSidebar() {
@@ -386,17 +476,13 @@
     currentPersona = key;
     const p = personas[key];
 
-    // Update sidebar
-    document.querySelectorAll('.persona-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.key === key);
-    });
+    document.querySelectorAll('.persona-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.key === key));
 
-    // Update header
     document.getElementById('header-emoji').textContent = p.emoji;
     document.getElementById('header-name').textContent = p.name;
     document.getElementById('header-tag').textContent = p.tagline;
 
-    // Clear chat and show welcome
     chatBox.innerHTML = `
       <div class="welcome" id="welcome-msg">
         <span class="welcome-emoji">${p.emoji}</span>
@@ -404,12 +490,23 @@
         <p>${p.tagline} — ask me anything.</p>
       </div>`;
 
+    // Apply color: user override takes priority, else persona default
+    if (userOverrideColor) {
+      applyAccent(userOverrideColor, null);
+    } else {
+      const c = personaColors[key] || { accent: '#7c6af7', bg: '#0e0e12' };
+      applyAccent(c.accent, c.bg);
+    }
+
     userInput.focus();
   }
 
-  function appendMessage(role, text, emoji) {
-    document.getElementById('welcome-msg')?.remove();
+  const chatBox = document.getElementById('chat-box');
+  const userInput = document.getElementById('user-input');
+  const sendBtn = document.getElementById('send-btn');
 
+  function appendMessage(role, text) {
+    document.getElementById('welcome-msg')?.remove();
     const msg = document.createElement('div');
     msg.className = `message ${role}`;
 
@@ -430,37 +527,26 @@
   function showTyping() {
     document.getElementById('welcome-msg')?.remove();
     const msg = document.createElement('div');
-    msg.className = 'message bot';
-    msg.id = 'typing';
-
+    msg.className = 'message bot'; msg.id = 'typing';
     const avatar = document.createElement('div');
     avatar.className = 'msg-avatar';
     avatar.textContent = personas[currentPersona]?.emoji || '🤖';
-
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
     bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
-
-    msg.appendChild(avatar);
-    msg.appendChild(bubble);
+    msg.appendChild(avatar); msg.appendChild(bubble);
     chatBox.appendChild(msg);
     chatBox.scrollTop = chatBox.scrollHeight;
   }
 
-  function removeTyping() {
-    document.getElementById('typing')?.remove();
-  }
+  function removeTyping() { document.getElementById('typing')?.remove(); }
 
   async function sendMessage() {
     const text = userInput.value.trim();
     if (!text) return;
-
     appendMessage('user', text);
-    userInput.value = '';
-    userInput.style.height = 'auto';
-    sendBtn.disabled = true;
-    showTyping();
-
+    userInput.value = ''; userInput.style.height = 'auto';
+    sendBtn.disabled = true; showTyping();
     try {
       const res = await fetch('/chat', {
         method: 'POST',
@@ -474,12 +560,10 @@
       removeTyping();
       appendMessage('bot', 'Connection error. Is Ollama running?');
     }
-
-    sendBtn.disabled = false;
-    userInput.focus();
+    sendBtn.disabled = false; userInput.focus();
   }
 
-  resetBtn.addEventListener('click', async () => {
+  document.getElementById('clear-btn').addEventListener('click', async () => {
     await fetch('/reset', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -504,7 +588,6 @@
   });
 
   sendBtn.addEventListener('click', sendMessage);
-
   loadPersonas();
 </script>
 </body>
