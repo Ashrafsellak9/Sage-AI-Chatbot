@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory, Response
+from flask import Flask, request, jsonify, send_from_directory, Response, stream_with_context
 import requests
 import json
 import os
@@ -25,7 +25,19 @@ except ImportError:
 app = Flask(__name__, static_folder=".")
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
-MODEL = "llama3.2"
+OLLAMA_BASE = "http://localhost:11434"
+
+current_model = "llama3.2"
+
+DEFAULT_MODELS = [
+    {"id": "llama3.2", "label": "Llama 3.2", "tag": "Meta · Fast"},
+    {"id": "mistral", "label": "Mistral 7B", "tag": "Mistral · Balanced"},
+    {"id": "gemma3", "label": "Gemma 3", "tag": "Google · Creative"},
+    {"id": "phi4-mini", "label": "Phi-4 Mini", "tag": "Microsoft · Tiny"},
+    {"id": "deepseek-r1", "label": "DeepSeek R1", "tag": "DS · Reasoning"},
+    {"id": "qwen2.5", "label": "Qwen 2.5", "tag": "Alibaba · Smart"},
+]
+
 HISTORY_DIR = "conversations"
 os.makedirs(HISTORY_DIR, exist_ok=True)
 
@@ -413,7 +425,7 @@ def generate_persona_starters():
     )
     oresp = requests.post(
         OLLAMA_URL,
-        json={"model": MODEL, "messages": [{"role": "user", "content": gen_prompt}], "stream": False},
+        json={"model": current_model, "messages": [{"role": "user", "content": gen_prompt}], "stream": False},
         timeout=120,
     )
     if oresp.status_code != 200:
@@ -581,7 +593,7 @@ def chat():
     history.append({"role": "user", "content": user_message})
 
     messages = [{"role": "system", "content": system_content}] + history
-    response = requests.post(OLLAMA_URL, json={"model": MODEL, "messages": messages, "stream": False})
+    response = requests.post(OLLAMA_URL, json={"model": current_model, "messages": messages, "stream": False})
 
     if response.status_code != 200:
         return jsonify({"error": "Ollama error: " + response.text}), 500
@@ -591,6 +603,216 @@ def chat():
     save_conversation(persona_key, session_id)
 
     return jsonify({"response": assistant_message})
+
+
+@app.route("/chat/stream", methods=["POST"])
+def chat_stream():
+    data = request.get_json(silent=True) or {}
+    user_message = (data.get("message") or "").strip()
+    persona_key = data.get("persona", "wise_mentor")
+    session_id = data.get("session_id", "default")
+
+    if not user_message:
+        return jsonify({"error": "Empty message"}), 400
+    if persona_key not in PERSONAS:
+        return jsonify({"error": "Unknown persona"}), 400
+
+    persona = PERSONAS[persona_key]
+    formality, conciseness, creativity = _parse_tone_values(data or {})
+    tone_suffix = build_tone_suffix(formality, conciseness, creativity)
+    system_content = persona["prompt"] + "\n\n[TONE INSTRUCTIONS]: " + tone_suffix
+
+    history = conversation_histories[persona_key]
+    pending_user = {"role": "user", "content": user_message}
+    messages = [{"role": "system", "content": system_content}] + history + [pending_user]
+
+    def generate():
+        full_response = ""
+        try:
+            with requests.post(
+                OLLAMA_URL,
+                json={"model": current_model, "messages": messages, "stream": True},
+                stream=True,
+                timeout=(30, 600),
+            ) as r:
+                if r.status_code != 200:
+                    err = r.text or "Ollama request failed"
+                    yield f"data: {json.dumps({'error': err})}\n\n"
+                    return
+
+                for line in r.iter_lines(decode_unicode=True):
+                    if not line:
+                        continue
+                    try:
+                        chunk = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    token = (chunk.get("message") or {}).get("content") or ""
+                    if token:
+                        full_response += token
+                        yield f"data: {json.dumps({'token': token}, ensure_ascii=False)}\n\n"
+                    if chunk.get("done"):
+                        break
+
+            if full_response:
+                history.append(pending_user)
+                history.append({"role": "assistant", "content": full_response})
+                save_conversation(persona_key, session_id)
+            else:
+                yield f"data: {json.dumps({'error': 'Empty response from model'})}\n\n"
+                return
+
+            yield f"data: {json.dumps({'done': True})}\n\n"
+
+        except requests.RequestException as e:
+            if full_response:
+                history.append(pending_user)
+                history.append(
+                    {"role": "assistant", "content": full_response + " [stream interrupted]"}
+                )
+                save_conversation(persona_key, session_id)
+                yield f"data: {json.dumps({'done': True, 'interrupted': True}, ensure_ascii=False)}\n\n"
+            else:
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        except Exception as e:
+            if full_response:
+                history.append(pending_user)
+                history.append(
+                    {"role": "assistant", "content": full_response + " [stream interrupted]"}
+                )
+                save_conversation(persona_key, session_id)
+                yield f"data: {json.dumps({'done': True, 'interrupted': True}, ensure_ascii=False)}\n\n"
+            else:
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
+
+
+def _ollama_model_base(name: str) -> str:
+    if not name:
+        return ""
+    return name.split(":", 1)[0]
+
+
+def _build_models_payload():
+    try:
+        r = requests.get(f"{OLLAMA_BASE}/api/tags", timeout=5)
+        r.raise_for_status()
+        installed_raw = r.json().get("models") or []
+    except Exception:
+        return None, "Ollama unreachable"
+
+    installed_names_full = [m.get("name") or "" for m in installed_raw if m.get("name")]
+    preset_ids = {dm["id"] for dm in DEFAULT_MODELS}
+
+    def preset_installed(pid: str) -> bool:
+        for n in installed_names_full:
+            if not n:
+                continue
+            b = _ollama_model_base(n)
+            if b == pid or n == pid:
+                return True
+        return False
+
+    models_out = []
+    for dm in DEFAULT_MODELS:
+        models_out.append(
+            {
+                "id": dm["id"],
+                "label": dm["label"],
+                "tag": dm["tag"],
+                "installed": preset_installed(dm["id"]),
+            }
+        )
+
+    for n in sorted(installed_names_full):
+        if not n:
+            continue
+        b = _ollama_model_base(n)
+        if b in preset_ids or n in preset_ids:
+            continue
+        models_out.append({"id": n, "label": n, "tag": "Custom", "installed": True})
+
+    return models_out, None
+
+
+@app.route("/models", methods=["GET"])
+def list_models():
+    global current_model
+    payload, err = _build_models_payload()
+    if err:
+        return jsonify({"current": current_model, "models": [], "error": err})
+    return jsonify({"current": current_model, "models": payload})
+
+
+@app.route("/models/switch", methods=["POST"])
+def switch_model():
+    global current_model
+    data = request.get_json(silent=True) or {}
+    mid = data.get("model_id") or ""
+    current_model = mid
+    return jsonify({"status": "switched", "model": current_model})
+
+
+@app.route("/models/pull", methods=["POST"])
+def pull_model():
+    data = request.get_json(silent=True) or {}
+    model_id = (data.get("model_id") or "").strip()
+
+    def generate():
+        if not model_id:
+            yield f"data: {json.dumps({'error': 'model_id required'})}\n\n"
+            return
+        try:
+            with requests.post(
+                f"{OLLAMA_BASE}/api/pull",
+                json={"name": model_id, "stream": True},
+                stream=True,
+                timeout=(30, None),
+            ) as r:
+                if r.status_code != 200:
+                    err = r.text or "Pull request failed"
+                    yield f"data: {json.dumps({'error': err})}\n\n"
+                    return
+                for line in r.iter_lines(decode_unicode=True):
+                    if not line:
+                        continue
+                    try:
+                        chunk = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    total = chunk.get("total") or 0
+                    completed = chunk.get("completed") or 0
+                    st = chunk.get("status") or ""
+                    if total > 0:
+                        pct = int((completed / total) * 100)
+                        yield f"data: {json.dumps({'status': 'downloading', 'percent': pct})}\n\n"
+                    elif st:
+                        yield f"data: {json.dumps({'status': st})}\n\n"
+                    if chunk.get("done"):
+                        break
+                yield f"data: {json.dumps({'done': True})}\n\n"
+        except requests.RequestException as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
+
 
 @app.route("/tts", methods=["POST"])
 def tts():
