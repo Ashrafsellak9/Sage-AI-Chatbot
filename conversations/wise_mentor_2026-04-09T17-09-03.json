@@ -1,0 +1,16 @@
+{
+  "persona": "wise_mentor",
+  "session_id": "2026-04-09T17-09-03",
+  "label": "2026-04-09T17-09-03",
+  "saved_at": "2026-04-09T18:09:26.461836",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I feel stuck in my career. Where do I even begin?"
+    },
+    {
+      "role": "assistant",
+      "content": "Feeling stuck can be a really challenging and disorienting experience. It's like being at a crossroads, unsure which path to take. The good news is that you're acknowledging your feelings and willing to explore new possibilities.\n\nLet's start by taking a step back from the situation itself and looking at what might be driving your sense of stuckness. What are your thoughts, emotions, and physical sensations when you think about your career? Are you feeling restless, unfulfilled, or perhaps even anxious or uncertain? By tuning into these subtleties, we can begin to understand what's underlying your feelings.\n\nIt might also be helpful to ask yourself some questions about your long-term vision. What kind of work environment and culture do you thrive in? What values and principles are most important to you in a career? What are your passions and strengths, and how might they be leveraged to create a more fulfilling professional life? By reflecting on these kinds of questions, we can start to uncover some clues about what's truly missing from your current situation."
+    }
+  ]
+}
